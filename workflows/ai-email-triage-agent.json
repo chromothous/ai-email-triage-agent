@@ -65,7 +65,7 @@
         "promptType": "define",
         "text": "=Subject:\n{{ $json.subject }}\n\nSender:\n{{ $json.sender }}\n\nBody:\n{{ $json.body }}",
         "options": {
-          "systemMessage": "You are an email classification assistant.\n\nYour task is to classify the email into exactly one of these categories:\n\n- Work\n- Personal\n- Finance\n- Promotions\n- Spam\n\nRespond with ONLY the category name.\n\nDo not explain your reasoning.\nDo not include punctuation.\nDo not include additional text."
+          "systemMessage": "You are an email classification assistant.\n\nClassify every email into exactly one of these categories:\n\n- Work\n- Personal\n- Finance\n- Promotions\n- Spam\n\nRespond ONLY with valid JSON.\n\nExample:\n\n{\n  \"category\": \"Work\"\n}\n\nDo not include markdown.\nDo not include explanations.\nDo not include extra text."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -99,7 +99,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first();\nconst data = item.json;\n\nconst category = data.output.trim();\n\nconst allowedCategories = [\n    \"Work\",\n    \"Personal\",\n    \"Finance\",\n    \"Promotions\",\n    \"Spam\"\n];\n\nif (!allowedCategories.includes(category)) {\n    throw new Error(`Invalid category: ${category}`);\n}\n\nreturn [{\n    json: {\n        ...data,\n        testResults: {\n            ...(data.testResults ?? {}),\n            version: \"0.0.2\",\n            passed: true,\n            classification: category,\n            timestamp: new Date().toISOString()\n        }\n    }\n}];"
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\n// Parse the AI's JSON string\nlet classification;\n\ntry {\n    classification = JSON.parse(data.output);\n} catch (error) {\n    throw new Error(\"❌ AI output is not valid JSON.\");\n}\n\n// Ensure the category exists\nif (!classification.category) {\n    throw new Error(\"❌ Missing 'category' field.\");\n}\n\n// Allowed categories\nconst allowedCategories = [\n    \"Work\",\n    \"Personal\",\n    \"Finance\",\n    \"Promotions\",\n    \"Spam\"\n];\n\n// Validate the category\nif (!allowedCategories.includes(classification.category)) {\n    throw new Error(\n        `❌ Invalid category: ${classification.category}`\n    );\n}\n\n// Return everything for the next node\nreturn [\n    {\n        json: {\n            ...data,\n\n            // Parsed AI output\n            aiClassification: classification,\n\n            // Regression test results\n            testResults: {\n                ...(data.testResults ?? {}),\n                v002: {\n                    passed: true,\n                    category: classification.category,\n                    timestamp: new Date().toISOString()\n                }\n            }\n        }\n    }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -109,6 +109,19 @@
       ],
       "id": "ff153f31-4322-441e-8775-323b8d1796a9",
       "name": "Version 0.0.2 Test"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\nlet classification;\n\ntry {\n    classification = JSON.parse(data.output);\n} catch (error) {\n    throw new Error(\"❌ AI output is not valid JSON.\");\n}\n\n// Required field\nif (!classification.hasOwnProperty(\"category\")) {\n    throw new Error(\"❌ Missing 'category' field.\");\n}\n\n// Type check\nif (typeof classification.category !== \"string\") {\n    throw new Error(\"❌ 'category' must be a string.\");\n}\n\n// Allowed values\nconst allowedCategories = [\n    \"Work\",\n    \"Personal\",\n    \"Finance\",\n    \"Promotions\",\n    \"Spam\"\n];\n\nif (!allowedCategories.includes(classification.category)) {\n    throw new Error(\n        `❌ Invalid category: ${classification.category}`\n    );\n}\n\n// Ensure no unexpected fields\nconst allowedFields = [\"category\"];\nconst extraFields = Object.keys(classification)\n    .filter(key => !allowedFields.includes(key));\n\nif (extraFields.length > 0) {\n    throw new Error(\n        `❌ Unexpected fields: ${extraFields.join(\", \")}`\n    );\n}\n\nreturn [{\n    json: {\n        ...data,\n        aiClassification: classification,\n        testResults: {\n            ...(data.testResults ?? {}),\n            v003: {\n                passed: true,\n                schemaValidated: true,\n                timestamp: new Date().toISOString()\n            }\n        }\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        272
+      ],
+      "id": "a426ee83-328d-4963-8494-6ccb4aaa8f2d",
+      "name": "Version 0.0.3 Test"
     }
   ],
   "pinData": {},
@@ -167,6 +180,17 @@
           }
         ]
       ]
+    },
+    "Version 0.0.2 Test": {
+      "main": [
+        [
+          {
+            "node": "Version 0.0.3 Test",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -175,7 +199,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "3f918437-ccf6-4e5b-a9f2-3dfdb7187de7",
+  "versionId": "88383428-0aa8-4efe-be0d-f71f21543896",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "cc9620e8417f8ca78731be92f1cb94a7c2ac73008e3b0b931735db73434bcdca"
