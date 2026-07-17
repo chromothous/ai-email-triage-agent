@@ -49,7 +49,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const email = $input.first().json;\n\nconst requiredFields = [\n  \"subject\",\n  \"sender\",\n  \"body\"\n];\n\nconst missing = requiredFields.filter(field =>\n  !Object.prototype.hasOwnProperty.call(email, field) ||\n  email[field] === \"\" ||\n  email[field] === null ||\n  email[field] === undefined\n);\n\nif (missing.length > 0) {\n  throw new Error(\n    `❌ Version 0.0.1 Test Failed\\nMissing field(s): ${missing.join(\", \")}`\n  );\n}\n\nreturn [{\n  json: {\n    version: \"0.0.1\",\n    testSuite: \"Core Input Validation\",\n    testsRun: 3,\n    testsPassed: 3,\n    status: \"PASS\",\n    message: \"✅ All required email fields exist.\"\n  }\n}];"
+        "jsCode": "// Get the original item\nconst item = $input.first();\nconst email = item.json;\n\n// Validate required fields\nif (!email.subject) {\n  throw new Error(\"❌ Missing subject\");\n}\n\nif (!email.sender) {\n  throw new Error(\"❌ Missing sender\");\n}\n\nif (!email.body) {\n  throw new Error(\"❌ Missing body\");\n}\n\n// Pass the original email forward while adding test metadata\nreturn [\n  {\n    json: {\n      ...email,\n\n      testResults: {\n        version: \"0.0.1\",\n        passed: true,\n        testsRun: 3,\n        testsPassed: 3,\n        timestamp: new Date().toISOString()\n      }\n    }\n  }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -59,6 +59,56 @@
       ],
       "id": "ab3f2454-a95d-4242-ba61-0f7621129fc9",
       "name": "Version 0.0.1 Test"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Subject:\n{{ $json.subject }}\n\nSender:\n{{ $json.sender }}\n\nBody:\n{{ $json.body }}",
+        "options": {
+          "systemMessage": "You are an email classification assistant.\n\nYour task is to classify the email into exactly one of these categories:\n\n- Work\n- Personal\n- Finance\n- Promotions\n- Spam\n\nRespond with ONLY the category name.\n\nDo not explain your reasoning.\nDo not include punctuation.\nDo not include additional text."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        432,
+        0
+      ],
+      "id": "80441238-e386-4e04-a447-0fa3299be19b",
+      "name": "Email Classifier"
+    },
+    {
+      "parameters": {
+        "model": "openrouter/free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        432,
+        144
+      ],
+      "id": "8f1e8ebc-8635-437a-801c-035b80b2b802",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "fALBHrt0o6XXDI17",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\nconst category = data.output.trim();\n\nconst allowedCategories = [\n    \"Work\",\n    \"Personal\",\n    \"Finance\",\n    \"Promotions\",\n    \"Spam\"\n];\n\nif (!allowedCategories.includes(category)) {\n    throw new Error(`Invalid category: ${category}`);\n}\n\nreturn [{\n    json: {\n        ...data,\n        testResults: {\n            ...(data.testResults ?? {}),\n            version: \"0.0.2\",\n            passed: true,\n            classification: category,\n            timestamp: new Date().toISOString()\n        }\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        272
+      ],
+      "id": "ff153f31-4322-441e-8775-323b8d1796a9",
+      "name": "Version 0.0.2 Test"
     }
   ],
   "pinData": {},
@@ -84,6 +134,39 @@
           }
         ]
       ]
+    },
+    "Version 0.0.1 Test": {
+      "main": [
+        [
+          {
+            "node": "Email Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Classifier": {
+      "main": [
+        [
+          {
+            "node": "Version 0.0.2 Test",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -92,7 +175,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "14b808ed-edae-4cb6-af6a-f516ef48666a",
+  "versionId": "3f918437-ccf6-4e5b-a9f2-3dfdb7187de7",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "cc9620e8417f8ca78731be92f1cb94a7c2ac73008e3b0b931735db73434bcdca"
