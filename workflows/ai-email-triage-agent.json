@@ -1,0 +1,103 @@
+{
+  "name": "ai-email-triage-agent",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "3c5a8691-44ae-4fff-8c0c-dba0d34e1dc2",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5f672786-128b-4c62-ba62-1088ed4432d1",
+              "name": "subject",
+              "value": "Interview Invitation",
+              "type": "string"
+            },
+            {
+              "id": "ed4c937b-421e-4d59-b6b9-40a2dba96e6b",
+              "name": "sender",
+              "value": "recruiter@example.com",
+              "type": "string"
+            },
+            {
+              "id": "f37068dd-cb67-4fcb-8ff2-3462cad58470",
+              "name": "body",
+              "value": "We reviewed your application and would like to schedule an interview next week.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "731a2002-cd53-4245-a7d1-43848ba41c28",
+      "name": "Test Email"
+    },
+    {
+      "parameters": {
+        "jsCode": "const email = $input.first().json;\n\nconst requiredFields = [\n  \"subject\",\n  \"sender\",\n  \"body\"\n];\n\nconst missing = requiredFields.filter(field =>\n  !Object.prototype.hasOwnProperty.call(email, field) ||\n  email[field] === \"\" ||\n  email[field] === null ||\n  email[field] === undefined\n);\n\nif (missing.length > 0) {\n  throw new Error(\n    `❌ Version 0.0.1 Test Failed\\nMissing field(s): ${missing.join(\", \")}`\n  );\n}\n\nreturn [{\n  json: {\n    version: \"0.0.1\",\n    testSuite: \"Core Input Validation\",\n    testsRun: 3,\n    testsPassed: 3,\n    status: \"PASS\",\n    message: \"✅ All required email fields exist.\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        160
+      ],
+      "id": "ab3f2454-a95d-4242-ba61-0f7621129fc9",
+      "name": "Version 0.0.1 Test"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Test Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Email": {
+      "main": [
+        [
+          {
+            "node": "Version 0.0.1 Test",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "14b808ed-edae-4cb6-af6a-f516ef48666a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cc9620e8417f8ca78731be92f1cb94a7c2ac73008e3b0b931735db73434bcdca"
+  },
+  "nodeGroups": [],
+  "id": "bBfFm7DaDnDNdCAc",
+  "tags": []
+}
