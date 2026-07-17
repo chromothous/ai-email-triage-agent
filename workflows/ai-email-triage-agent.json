@@ -65,7 +65,7 @@
         "promptType": "define",
         "text": "=Subject:\n{{ $json.subject }}\n\nSender:\n{{ $json.sender }}\n\nBody:\n{{ $json.body }}",
         "options": {
-          "systemMessage": "You are an email classification assistant.\n\nClassify every email into exactly one of these categories:\n\n- Work\n- Personal\n- Finance\n- Promotions\n- Spam\n\nRespond ONLY with valid JSON.\n\nExample:\n\n{\n  \"category\": \"Work\"\n}\n\nDo not include markdown.\nDo not include explanations.\nDo not include extra text."
+          "systemMessage": "You are an AI email classification assistant.\n\nYour task is to analyze the email's subject and body, then classify it into one of the following categories:\n\n- Work\n- Personal\n- Finance\n- Promotions\n- Spam\n\nFor each category, assign the corresponding folder:\n\n- Work → Work\n- Personal → Personal\n- Finance → Finance\n- Promotions → Promotions\n- Spam → Spam\n\nRespond ONLY with valid JSON.\n\nUse exactly this format:\n\n```json\n{\n  \"category\": \"Work\",\n  \"folder\": \"Work\"\n}\n```\n\nOutput Requirements:\n\n- Return ONLY a raw JSON object.\n- Do NOT use Markdown.\n- Do NOT wrap the response in ```json or ``` fences.\n- Do NOT include explanations or commentary.\n- Do NOT include any text before or after the JSON.\n- The first character of your response MUST be {\n- The last character of your response MUST be }\n\nExample valid response:\n\n{\n  \"category\": \"Work\",\n  \"folder\": \"Work\"\n}"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -99,7 +99,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first();\nconst data = item.json;\n\n// Parse the AI's JSON string\nlet classification;\n\ntry {\n    classification = JSON.parse(data.output);\n} catch (error) {\n    throw new Error(\"❌ AI output is not valid JSON.\");\n}\n\n// Ensure the category exists\nif (!classification.category) {\n    throw new Error(\"❌ Missing 'category' field.\");\n}\n\n// Allowed categories\nconst allowedCategories = [\n    \"Work\",\n    \"Personal\",\n    \"Finance\",\n    \"Promotions\",\n    \"Spam\"\n];\n\n// Validate the category\nif (!allowedCategories.includes(classification.category)) {\n    throw new Error(\n        `❌ Invalid category: ${classification.category}`\n    );\n}\n\n// Return everything for the next node\nreturn [\n    {\n        json: {\n            ...data,\n\n            // Parsed AI output\n            aiClassification: classification,\n\n            // Regression test results\n            testResults: {\n                ...(data.testResults ?? {}),\n                v002: {\n                    passed: true,\n                    category: classification.category,\n                    timestamp: new Date().toISOString()\n                }\n            }\n        }\n    }\n];"
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\n// Ensure an AI response exists\nif (!data.output) {\n    throw new Error(\"❌ AI output is missing.\");\n}\n\n// Parse the AI's JSON string\nlet classification;\n\ntry {\n    classification = JSON.parse(data.output);\n} catch (error) {\n    throw new Error(\"❌ AI output is not valid JSON.\");\n}\n\n// Ensure the parsed value is an object\nif (\n    typeof classification !== \"object\" ||\n    classification === null ||\n    Array.isArray(classification)\n) {\n    throw new Error(\"❌ AI output is not a JSON object.\");\n}\n\n// Ensure category exists\nif (!Object.prototype.hasOwnProperty.call(classification, \"category\")) {\n    throw new Error(\"❌ Missing 'category' field.\");\n}\n\n// Ensure category is a string\nif (typeof classification.category !== \"string\") {\n    throw new Error(\"❌ 'category' must be a string.\");\n}\n\n// Allowed categories\nconst allowedCategories = [\n    \"Work\",\n    \"Personal\",\n    \"Finance\",\n    \"Promotions\",\n    \"Spam\"\n];\n\n// Validate category\nif (!allowedCategories.includes(classification.category)) {\n    throw new Error(\n        `❌ Invalid category: ${classification.category}`\n    );\n}\n\n// Success\nreturn [{\n    json: {\n        ...data,\n\n        aiClassification: classification,\n\n        testResults: {\n            ...(data.testResults ?? {}),\n            v002: {\n                passed: true,\n                category: classification.category,\n                timestamp: new Date().toISOString()\n            }\n        }\n    }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -112,7 +112,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first();\nconst data = item.json;\n\nlet classification;\n\ntry {\n    classification = JSON.parse(data.output);\n} catch (error) {\n    throw new Error(\"❌ AI output is not valid JSON.\");\n}\n\n// Required field\nif (!classification.hasOwnProperty(\"category\")) {\n    throw new Error(\"❌ Missing 'category' field.\");\n}\n\n// Type check\nif (typeof classification.category !== \"string\") {\n    throw new Error(\"❌ 'category' must be a string.\");\n}\n\n// Allowed values\nconst allowedCategories = [\n    \"Work\",\n    \"Personal\",\n    \"Finance\",\n    \"Promotions\",\n    \"Spam\"\n];\n\nif (!allowedCategories.includes(classification.category)) {\n    throw new Error(\n        `❌ Invalid category: ${classification.category}`\n    );\n}\n\n// Ensure no unexpected fields\nconst allowedFields = [\"category\"];\nconst extraFields = Object.keys(classification)\n    .filter(key => !allowedFields.includes(key));\n\nif (extraFields.length > 0) {\n    throw new Error(\n        `❌ Unexpected fields: ${extraFields.join(\", \")}`\n    );\n}\n\nreturn [{\n    json: {\n        ...data,\n        aiClassification: classification,\n        testResults: {\n            ...(data.testResults ?? {}),\n            v003: {\n                passed: true,\n                schemaValidated: true,\n                timestamp: new Date().toISOString()\n            }\n        }\n    }\n}];"
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\n// Ensure an AI response exists\nif (!data.output) {\n    throw new Error(\"❌ AI output is missing.\");\n}\n\n// Parse the AI's JSON string\nlet classification;\n\ntry {\n    classification = JSON.parse(data.output);\n} catch (error) {\n    throw new Error(\"❌ AI output is not valid JSON.\");\n}\n\n// Ensure the parsed value is an object\nif (\n    typeof classification !== \"object\" ||\n    classification === null ||\n    Array.isArray(classification)\n) {\n    throw new Error(\"❌ AI output is not a JSON object.\");\n}\n\n// Required fields\nif (!Object.prototype.hasOwnProperty.call(classification, \"category\")) {\n    throw new Error(\"❌ Missing 'category' field.\");\n}\n\nif (!Object.prototype.hasOwnProperty.call(classification, \"folder\")) {\n    throw new Error(\"❌ Missing 'folder' field.\");\n}\n\n// Type validation\nif (typeof classification.category !== \"string\") {\n    throw new Error(\"❌ 'category' must be a string.\");\n}\n\nif (typeof classification.folder !== \"string\") {\n    throw new Error(\"❌ 'folder' must be a string.\");\n}\n\n// Valid category → folder mapping\nconst folderMap = {\n    Work: \"Work\",\n    Personal: \"Personal\",\n    Finance: \"Finance\",\n    Promotions: \"Promotions\",\n    Spam: \"Spam\"\n};\n\n// Validate category\nif (!Object.prototype.hasOwnProperty.call(folderMap, classification.category)) {\n    throw new Error(\n        `❌ Invalid category: ${classification.category}`\n    );\n}\n\n// Validate folder\nconst expectedFolder = folderMap[classification.category];\n\nif (classification.folder !== expectedFolder) {\n    throw new Error(\n        `❌ Folder mismatch. Expected '${expectedFolder}', got '${classification.folder}'.`\n    );\n}\n\n// Success\nreturn [{\n    json: {\n        ...data,\n\n        aiClassification: classification,\n\n        testResults: {\n            ...(data.testResults ?? {}),\n            v003: {\n                passed: true,\n                category: classification.category,\n                folder: classification.folder,\n                timestamp: new Date().toISOString()\n            }\n        }\n    }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -122,6 +122,19 @@
       ],
       "id": "a426ee83-328d-4963-8494-6ccb4aaa8f2d",
       "name": "Version 0.0.3 Test"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\n// Ensure an AI response exists\nif (!data.output) {\n    throw new Error(\"❌ AI output is missing.\");\n}\n\n// Parse the AI JSON\nlet classification;\n\ntry {\n    classification = JSON.parse(data.output);\n} catch (error) {\n    throw new Error(\"❌ AI output is not valid JSON.\");\n}\n\n// Ensure the parsed value is an object\nif (\n    typeof classification !== \"object\" ||\n    classification === null ||\n    Array.isArray(classification)\n) {\n    throw new Error(\"❌ AI output is not a JSON object.\");\n}\n\n// Expected fields\nconst expectedFields = [\"category\", \"folder\"];\n\n// Check for missing fields\nfor (const field of expectedFields) {\n    if (!Object.prototype.hasOwnProperty.call(classification, field)) {\n        throw new Error(`❌ Missing '${field}' field.`);\n    }\n}\n\n// Check for unexpected fields\nconst extraFields = Object.keys(classification)\n    .filter(key => !expectedFields.includes(key));\n\nif (extraFields.length > 0) {\n    throw new Error(\n        `❌ Unexpected field(s): ${extraFields.join(\", \")}`\n    );\n}\n\n// Type validation\nif (typeof classification.category !== \"string\") {\n    throw new Error(\"❌ 'category' must be a string.\");\n}\n\nif (typeof classification.folder !== \"string\") {\n    throw new Error(\"❌ 'folder' must be a string.\");\n}\n\n// Allowed mapping\nconst folderMap = {\n    Work: \"Work\",\n    Personal: \"Personal\",\n    Finance: \"Finance\",\n    Promotions: \"Promotions\",\n    Spam: \"Spam\"\n};\n\n// Validate category\nif (!Object.prototype.hasOwnProperty.call(folderMap, classification.category)) {\n    throw new Error(\n        `❌ Invalid category: ${classification.category}`\n    );\n}\n\n// Validate folder\nif (classification.folder !== folderMap[classification.category]) {\n    throw new Error(\n        `❌ Folder mismatch. Expected '${folderMap[classification.category]}', got '${classification.folder}'.`\n    );\n}\n\n// Success\nreturn [{\n    json: {\n        ...data,\n        aiClassification: classification,\n        testResults: {\n            ...(data.testResults ?? {}),\n            v004: {\n                passed: true,\n                contractValidated: true,\n                timestamp: new Date().toISOString()\n            }\n        }\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        272
+      ],
+      "id": "4e65ae8c-20a6-496b-a8d4-ce048bb991b5",
+      "name": "Version 0.0.4 Test"
     }
   ],
   "pinData": {},
@@ -191,6 +204,17 @@
           }
         ]
       ]
+    },
+    "Version 0.0.3 Test": {
+      "main": [
+        [
+          {
+            "node": "Version 0.0.4 Test",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -199,7 +223,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "88383428-0aa8-4efe-be0d-f71f21543896",
+  "versionId": "3ddd00f2-1e36-4c2a-b8ef-96d28e342ea1",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "cc9620e8417f8ca78731be92f1cb94a7c2ac73008e3b0b931735db73434bcdca"

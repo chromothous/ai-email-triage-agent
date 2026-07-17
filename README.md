@@ -11,3 +11,6 @@ Version 0.0.3
 Made it to where AI agent outputs JSON, tested flow.
 
 Version 0.0.4
+Added a folder to the json object, tested flow.
+
+Version 0.0.5
