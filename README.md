@@ -14,3 +14,6 @@ Version 0.0.4
 Added a folder to the json object, tested flow.
 
 Version 0.0.5
+Added normalization of data, tested flow.
+
+Version 0.0.6

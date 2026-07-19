@@ -55,7 +55,7 @@
       "typeVersion": 2,
       "position": [
         0,
-        160
+        272
       ],
       "id": "ab3f2454-a95d-4242-ba61-0f7621129fc9",
       "name": "Version 0.0.1 Test"
@@ -135,6 +135,32 @@
       ],
       "id": "4e65ae8c-20a6-496b-a8d4-ce048bb991b5",
       "name": "Version 0.0.4 Test"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\n// Ensure an AI response exists\nif (!data.output) {\n    throw new Error(\"❌ AI output is missing.\");\n}\n\n// Normalize the AI response\nlet cleanedOutput = data.output.trim();\n\n// Remove Markdown code fences\ncleanedOutput = cleanedOutput\n    .replace(/^```json\\s*/i, \"\")\n    .replace(/^```\\s*/i, \"\")\n    .replace(/\\s*```$/, \"\")\n    .trim();\n\n// Parse normalized JSON\nlet classification;\n\ntry {\n    classification = JSON.parse(cleanedOutput);\n} catch (error) {\n    throw new Error(\"❌ Normalized AI output is not valid JSON.\");\n}\n\n// Ensure object\nif (\n    typeof classification !== \"object\" ||\n    classification === null ||\n    Array.isArray(classification)\n) {\n    throw new Error(\"❌ AI output is not a JSON object.\");\n}\n\nreturn [{\n    json: {\n        ...data,\n\n        // Preserve both versions\n        rawAiOutput: data.output,\n        normalizedAiOutput: cleanedOutput,\n\n        aiClassification: classification,\n\n        testResults: {\n            ...(data.testResults ?? {}),\n            v005: {\n                passed: true,\n                normalized: true,\n                timestamp: new Date().toISOString()\n            }\n        }\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        0
+      ],
+      "id": "e3afc5cd-80c3-45e5-8a8a-10edfa6114ca",
+      "name": "Data Normalization"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\n// Ensure an AI response exists\nif (!data.output) {\n    throw new Error(\"❌ AI output is missing.\");\n}\n\n// Preserve the original output\nconst rawOutput = data.output;\n\n// Normalize the AI response\nlet normalizedOutput = rawOutput.trim();\n\n// Remove Markdown code fences\nnormalizedOutput = normalizedOutput\n    .replace(/^```json\\s*/i, \"\")\n    .replace(/^```\\s*/i, \"\")\n    .replace(/\\s*```$/, \"\")\n    .trim();\n\n// Parse normalized JSON\nlet classification;\n\ntry {\n    classification = JSON.parse(normalizedOutput);\n} catch (error) {\n    throw new Error(\"❌ Failed to parse normalized AI output.\");\n}\n\n// Ensure object\nif (\n    typeof classification !== \"object\" ||\n    classification === null ||\n    Array.isArray(classification)\n) {\n    throw new Error(\"❌ Normalized output is not a JSON object.\");\n}\n\n// Success\nreturn [{\n    json: {\n        ...data,\n\n        rawAiOutput: rawOutput,\n        normalizedAiOutput: normalizedOutput,\n        aiClassification: classification,\n\n        testResults: {\n            ...(data.testResults ?? {}),\n            v005: {\n                passed: true,\n                normalizationApplied: rawOutput !== normalizedOutput,\n                timestamp: new Date().toISOString()\n            }\n        }\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        272
+      ],
+      "id": "31855a02-0c3a-42d0-b684-ef3da1acb561",
+      "name": "Version 0.0.5 Test"
     }
   ],
   "pinData": {},
@@ -215,6 +241,28 @@
           }
         ]
       ]
+    },
+    "Version 0.0.4 Test": {
+      "main": [
+        [
+          {
+            "node": "Data Normalization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Normalization": {
+      "main": [
+        [
+          {
+            "node": "Version 0.0.5 Test",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -223,7 +271,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "3ddd00f2-1e36-4c2a-b8ef-96d28e342ea1",
+  "versionId": "3df5161c-6499-471b-b15c-09c33df564d3",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "cc9620e8417f8ca78731be92f1cb94a7c2ac73008e3b0b931735db73434bcdca"
