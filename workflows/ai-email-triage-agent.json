@@ -239,6 +239,32 @@
       ],
       "id": "deed0674-6242-48cc-83e7-1bfa352cb6d2",
       "name": "Version 0.0.8 Test"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\nif (!data.executionPlan) {\n    throw new Error(\"❌ Missing execution plan.\");\n}\n\nconst plan = data.executionPlan;\n\n// Ensure required fields exist\nconst requiredFields = [\n    \"provider\",\n    \"operation\",\n    \"destination\",\n    \"ready\",\n    \"executed\"\n];\n\nfor (const field of requiredFields) {\n    if (!(field in plan)) {\n        throw new Error(`❌ Missing executionPlan.${field}`);\n    }\n}\n\n// Prevent execution if already executed\nif (plan.executed) {\n    throw new Error(\"❌ Execution plan has already been executed.\");\n}\n\n// Ensure plan is marked ready\nif (!plan.ready) {\n    throw new Error(\"❌ Execution plan is not ready.\");\n}\n\n// Mark validation status\nconst executionValidation = {\n    validated: true,\n    timestamp: new Date().toISOString()\n};\n\nreturn [{\n    json: {\n        ...data,\n        executionValidation,\n        version: \"0.0.9\"\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1488,
+        0
+      ],
+      "id": "9de271ee-7ff1-4507-bd5b-5a3d04bb2373",
+      "name": "Execution Validation"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\n// Ensure execution validation exists\nif (!data.executionValidation) {\n    throw new Error(\"❌ Missing execution validation.\");\n}\n\nconst validation = data.executionValidation;\n\n// Validate required fields\nif (validation.validated !== true) {\n    throw new Error(\"❌ Execution validation did not succeed.\");\n}\n\nif (!validation.timestamp) {\n    throw new Error(\"❌ Missing execution validation timestamp.\");\n}\n\n// Ensure timestamp is valid\nconst parsedTimestamp = Date.parse(validation.timestamp);\n\nif (isNaN(parsedTimestamp)) {\n    throw new Error(\n        `❌ Invalid validation timestamp: ${validation.timestamp}`\n    );\n}\n\n// Cross-check against execution plan\nif (!data.executionPlan) {\n    throw new Error(\"❌ Missing execution plan.\");\n}\n\nif (data.executionPlan.ready !== true) {\n    throw new Error(\n        \"❌ Execution plan should be ready after successful validation.\"\n    );\n}\n\nif (data.executionPlan.executed !== false) {\n    throw new Error(\n        \"❌ Execution plan should not be executed during validation.\"\n    );\n}\n\n// Success\nreturn [{\n    json: {\n        ...data,\n\n        testResults: {\n            ...(data.testResults ?? {}),\n            v009: {\n                passed: true,\n                validated: validation.validated,\n                timestamp: validation.timestamp\n            }\n        }\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1808,
+        288
+      ],
+      "id": "75bdb954-644e-46f6-be36-505c5983ed11",
+      "name": "Version 0.0.9 Test"
     }
   ],
   "pinData": {},
@@ -407,6 +433,28 @@
           }
         ]
       ]
+    },
+    "Version 0.0.8 Test": {
+      "main": [
+        [
+          {
+            "node": "Execution Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execution Validation": {
+      "main": [
+        [
+          {
+            "node": "Version 0.0.9 Test",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -415,7 +463,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "2913994e-d8af-42ab-b3d3-b1bcd40c3e09",
+  "versionId": "ae6c66ec-a3e7-4fb9-b400-30d26f36502d",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "cc9620e8417f8ca78731be92f1cb94a7c2ac73008e3b0b931735db73434bcdca"
