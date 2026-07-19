@@ -17,3 +17,6 @@ Version 0.0.5
 Added normalization of data, tested flow.
 
 Version 0.0.6
+Added routing engine, tested flow.
+
+Version 0.0.7

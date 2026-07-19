@@ -161,6 +161,32 @@
       ],
       "id": "31855a02-0c3a-42d0-b684-ef3da1acb561",
       "name": "Version 0.0.5 Test"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\nconst classification = data.aiClassification;\n\nif (!classification) {\n    throw new Error(\"❌ Missing AI classification.\");\n}\n\nconst routes = {\n    Work: \"Work\",\n    Personal: \"Personal\",\n    Finance: \"Finance\",\n    Promotions: \"Promotions\",\n    Spam: \"Spam\"\n};\n\nconst destination = routes[classification.folder];\n\nif (!destination) {\n    throw new Error(`❌ No route defined for '${classification.folder}'.`);\n}\n\nreturn [{\n    json: {\n        ...data,\n\n        routing: {\n            destination,\n            status: \"READY\"\n        },\n\n        version: \"0.0.6\"\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        944,
+        0
+      ],
+      "id": "b085cdea-0d28-4ba6-b202-5389cbc2e53a",
+      "name": "Routing Engine"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\n// Ensure routing object exists\nif (!data.routing) {\n    throw new Error(\"❌ Missing routing object.\");\n}\n\n// Validate destination\nif (!data.routing.destination) {\n    throw new Error(\"❌ Missing routing destination.\");\n}\n\nconst validDestinations = [\n    \"Work\",\n    \"Personal\",\n    \"Finance\",\n    \"Promotions\",\n    \"Spam\"\n];\n\nif (!validDestinations.includes(data.routing.destination)) {\n    throw new Error(\n        `❌ Invalid routing destination: ${data.routing.destination}`\n    );\n}\n\n// Validate status\nif (data.routing.status !== \"READY\") {\n    throw new Error(\n        `❌ Routing status expected 'READY' but received '${data.routing.status}'.`\n    );\n}\n\n// Ensure routing agrees with the AI classification\nif (\n    data.aiClassification &&\n    data.routing.destination !== data.aiClassification.folder\n) {\n    throw new Error(\n        `❌ Routing destination '${data.routing.destination}' does not match AI folder '${data.aiClassification.folder}'.`\n    );\n}\n\n// Success\nreturn [{\n    json: {\n        ...data,\n\n        testResults: {\n            ...(data.testResults ?? {}),\n            v006: {\n                passed: true,\n                destination: data.routing.destination,\n                status: data.routing.status,\n                timestamp: new Date().toISOString()\n            }\n        }\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        288
+      ],
+      "id": "df5b54e6-92f7-4fc1-9b13-f628f143cc94",
+      "name": "Version 0.0.6 Test"
     }
   ],
   "pinData": {},
@@ -263,6 +289,28 @@
           }
         ]
       ]
+    },
+    "Version 0.0.5 Test": {
+      "main": [
+        [
+          {
+            "node": "Routing Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Routing Engine": {
+      "main": [
+        [
+          {
+            "node": "Version 0.0.6 Test",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -271,7 +319,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "3df5161c-6499-471b-b15c-09c33df564d3",
+  "versionId": "338b4036-9a28-460f-a960-f8da53bbce06",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "cc9620e8417f8ca78731be92f1cb94a7c2ac73008e3b0b931735db73434bcdca"
