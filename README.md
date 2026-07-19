@@ -23,3 +23,6 @@ Version 0.0.7
 Added action mapping, tested flow.
 
 Version 0.0.8
+Added Exercution Planner, tested flow.
+
+Version 0.0.9

@@ -213,6 +213,32 @@
       ],
       "id": "8e85c8ca-01a4-44f6-98bd-609a5526286c",
       "name": "Version 0.0.7 Test"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\nif (!data.routing) {\n    throw new Error(\"❌ Missing routing information.\");\n}\n\nconst executionPlan = {\n    provider: \"gmail\",\n    operation: data.routing.action,\n    destination: data.routing.destination,\n    ready: true,\n    executed: false\n};\n\nreturn [{\n    json: {\n        ...data,\n\n        executionPlan,\n\n        version: \"0.0.8\"\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        0
+      ],
+      "id": "ee40f0bf-8637-4821-89f6-e0ac883849e8",
+      "name": "Execution Planner"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\n// Ensure execution plan exists\nif (!data.executionPlan) {\n    throw new Error(\"❌ Missing execution plan.\");\n}\n\nconst plan = data.executionPlan;\n\n// Validate provider\nconst validProviders = [\n    \"gmail\"\n];\n\nif (!validProviders.includes(plan.provider)) {\n    throw new Error(\n        `❌ Invalid provider: ${plan.provider}`\n    );\n}\n\n// Validate operation\nconst validOperations = [\n    \"MOVE_EMAIL\",\n    \"LABEL_ONLY\",\n    \"DELETE_EMAIL\",\n    \"FORWARD_EMAIL\",\n    \"FLAG_FOR_REVIEW\"\n];\n\nif (!validOperations.includes(plan.operation)) {\n    throw new Error(\n        `❌ Invalid operation: ${plan.operation}`\n    );\n}\n\n// Validate destination\nconst validDestinations = [\n    \"Work\",\n    \"Personal\",\n    \"Finance\",\n    \"Promotions\",\n    \"Spam\"\n];\n\nif (!validDestinations.includes(plan.destination)) {\n    throw new Error(\n        `❌ Invalid destination: ${plan.destination}`\n    );\n}\n\n// Validate readiness flags\nif (plan.ready !== true) {\n    throw new Error(\"❌ Execution plan is not marked as ready.\");\n}\n\nif (plan.executed !== false) {\n    throw new Error(\"❌ Execution plan should not already be executed.\");\n}\n\n// Verify consistency with routing\nif (data.routing) {\n    if (plan.destination !== data.routing.destination) {\n        throw new Error(\n            `❌ Execution destination '${plan.destination}' does not match routing destination '${data.routing.destination}'.`\n        );\n    }\n\n    if (plan.operation !== data.routing.action) {\n        throw new Error(\n            `❌ Execution operation '${plan.operation}' does not match routing action '${data.routing.action}'.`\n        );\n    }\n}\n\n// Success\nreturn [{\n    json: {\n        ...data,\n\n        testResults: {\n            ...(data.testResults ?? {}),\n            v008: {\n                passed: true,\n                provider: plan.provider,\n                operation: plan.operation,\n                destination: plan.destination,\n                timestamp: new Date().toISOString()\n            }\n        }\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1632,
+        288
+      ],
+      "id": "deed0674-6242-48cc-83e7-1bfa352cb6d2",
+      "name": "Version 0.0.8 Test"
     }
   ],
   "pinData": {},
@@ -359,6 +385,28 @@
           }
         ]
       ]
+    },
+    "Version 0.0.7 Test": {
+      "main": [
+        [
+          {
+            "node": "Execution Planner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execution Planner": {
+      "main": [
+        [
+          {
+            "node": "Version 0.0.8 Test",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -367,7 +415,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "85a467ee-4b76-4feb-a8ff-db2a8134238a",
+  "versionId": "2913994e-d8af-42ab-b3d3-b1bcd40c3e09",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "cc9620e8417f8ca78731be92f1cb94a7c2ac73008e3b0b931735db73434bcdca"
