@@ -187,6 +187,32 @@
       ],
       "id": "df5b54e6-92f7-4fc1-9b13-f628f143cc94",
       "name": "Version 0.0.6 Test"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\nif (!data.routing) {\n    throw new Error(\"❌ Missing routing information.\");\n}\n\nconst actionMap = {\n    Work: \"MOVE_EMAIL\",\n    Personal: \"MOVE_EMAIL\",\n    Finance: \"MOVE_EMAIL\",\n    Promotions: \"MOVE_EMAIL\",\n    Spam: \"MOVE_EMAIL\"\n};\n\nconst action = actionMap[data.routing.destination];\n\nif (!action) {\n    throw new Error(\n        `❌ No action defined for ${data.routing.destination}.`\n    );\n}\n\nreturn [{\n    json: {\n        ...data,\n\n        routing: {\n            ...data.routing,\n            action\n        },\n\n        version: \"0.0.7\"\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "346c94bc-253f-4a61-9c50-d5ab90832e86",
+      "name": "Action Mapping"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\n// Ensure routing exists\nif (!data.routing) {\n    throw new Error(\"❌ Missing routing object.\");\n}\n\n// Ensure action exists\nif (!data.routing.action) {\n    throw new Error(\"❌ Missing routing action.\");\n}\n\n// Allowed actions\nconst validActions = [\n    \"MOVE_EMAIL\",\n    \"LABEL_ONLY\",\n    \"DELETE_EMAIL\",\n    \"FORWARD_EMAIL\",\n    \"FLAG_FOR_REVIEW\"\n];\n\nif (!validActions.includes(data.routing.action)) {\n    throw new Error(\n        `❌ Invalid routing action: ${data.routing.action}`\n    );\n}\n\n// Verify destination/action pair\nconst expectedActions = {\n    Work: \"MOVE_EMAIL\",\n    Personal: \"MOVE_EMAIL\",\n    Finance: \"MOVE_EMAIL\",\n    Promotions: \"MOVE_EMAIL\",\n    Spam: \"MOVE_EMAIL\"\n};\n\nconst expectedAction = expectedActions[data.routing.destination];\n\nif (!expectedAction) {\n    throw new Error(\n        `❌ No expected action defined for destination '${data.routing.destination}'.`\n    );\n}\n\nif (data.routing.action !== expectedAction) {\n    throw new Error(\n        `❌ Expected action '${expectedAction}' for destination '${data.routing.destination}', but received '${data.routing.action}'.`\n    );\n}\n\n// Success\nreturn [{\n    json: {\n        ...data,\n\n        testResults: {\n            ...(data.testResults ?? {}),\n            v007: {\n                passed: true,\n                action: data.routing.action,\n                destination: data.routing.destination,\n                timestamp: new Date().toISOString()\n            }\n        }\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        288
+      ],
+      "id": "8e85c8ca-01a4-44f6-98bd-609a5526286c",
+      "name": "Version 0.0.7 Test"
     }
   ],
   "pinData": {},
@@ -311,6 +337,28 @@
           }
         ]
       ]
+    },
+    "Version 0.0.6 Test": {
+      "main": [
+        [
+          {
+            "node": "Action Mapping",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Action Mapping": {
+      "main": [
+        [
+          {
+            "node": "Version 0.0.7 Test",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -319,7 +367,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "338b4036-9a28-460f-a960-f8da53bbce06",
+  "versionId": "85a467ee-4b76-4feb-a8ff-db2a8134238a",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "cc9620e8417f8ca78731be92f1cb94a7c2ac73008e3b0b931735db73434bcdca"

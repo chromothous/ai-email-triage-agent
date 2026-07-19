@@ -20,3 +20,6 @@ Version 0.0.6
 Added routing engine, tested flow.
 
 Version 0.0.7
+Added action mapping, tested flow.
+
+Version 0.0.8
