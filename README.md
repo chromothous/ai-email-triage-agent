@@ -32,3 +32,6 @@ Version 0.1.0
 Added email execution, tested flow.
 
 Version 0.1.1
+Added Execution Audit Log creation, tested flow.
+
+Version 0.1.2

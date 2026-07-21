@@ -291,6 +291,32 @@
       ],
       "id": "1d5e5947-f193-44dc-86ff-d18dbde8d971",
       "name": "Version 0.1.0 Test"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\nif (!data.executionResult?.success) {\n    throw new Error(\"❌ Cannot create audit log. Execution was not successful.\");\n}\n\nconst auditLog = {\n    event: \"EMAIL_PROCESSED\",\n    provider: data.executionResult.provider,\n    operation: data.executionResult.operation,\n    destination: data.executionResult.destination,\n    success: data.executionResult.success,\n    timestamp: new Date().toISOString(),\n    workflowVersion: \"0.1.1\"\n};\n\nreturn [{\n    json: {\n        ...data,\n        auditLog,\n        version: \"0.1.1\"\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1840,
+        0
+      ],
+      "id": "91b069b2-d7f1-4e7d-a87b-26bb8f685828",
+      "name": "Execution Audit Log"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\n// Ensure audit log exists\nif (!data.auditLog) {\n    throw new Error(\"❌ Missing audit log.\");\n}\n\nconst audit = data.auditLog;\n\n// Validate required fields\nconst requiredFields = [\n    \"event\",\n    \"provider\",\n    \"operation\",\n    \"destination\",\n    \"success\",\n    \"timestamp\",\n    \"workflowVersion\"\n];\n\nfor (const field of requiredFields) {\n    if (!(field in audit)) {\n        throw new Error(`❌ Missing auditLog.${field}`);\n    }\n}\n\n// Validate event\nif (audit.event !== \"EMAIL_PROCESSED\") {\n    throw new Error(\n        `❌ Unexpected audit event: ${audit.event}`\n    );\n}\n\n// Validate success\nif (audit.success !== true) {\n    throw new Error(\"❌ Audit log indicates unsuccessful execution.\");\n}\n\n// Validate timestamp\nif (isNaN(Date.parse(audit.timestamp))) {\n    throw new Error(\n        `❌ Invalid audit timestamp: ${audit.timestamp}`\n    );\n}\n\n// Validate workflow version\nif (audit.workflowVersion !== \"0.1.1\") {\n    throw new Error(\n        `❌ Expected workflowVersion '0.1.1', received '${audit.workflowVersion}'.`\n    );\n}\n\n// Cross-check with execution result\nif (!data.executionResult) {\n    throw new Error(\"❌ Missing execution result.\");\n}\n\nif (audit.provider !== data.executionResult.provider) {\n    throw new Error(\n        `❌ Provider mismatch between audit log and execution result.`\n    );\n}\n\nif (audit.operation !== data.executionResult.operation) {\n    throw new Error(\n        `❌ Operation mismatch between audit log and execution result.`\n    );\n}\n\nif (audit.destination !== data.executionResult.destination) {\n    throw new Error(\n        `❌ Destination mismatch between audit log and execution result.`\n    );\n}\n\nif (audit.success !== data.executionResult.success) {\n    throw new Error(\n        `❌ Success status mismatch between audit log and execution result.`\n    );\n}\n\n// Success\nreturn [{\n    json: {\n        ...data,\n\n        testResults: {\n            ...(data.testResults ?? {}),\n            \"v0.1.1\": {\n                passed: true,\n                event: audit.event,\n                timestamp: audit.timestamp,\n                workflowVersion: audit.workflowVersion\n            }\n        }\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2176,
+        288
+      ],
+      "id": "a15cfc1a-fad1-44a1-ba71-526974e511be",
+      "name": "Version 0.1.1 Test"
     }
   ],
   "pinData": {},
@@ -503,6 +529,28 @@
           }
         ]
       ]
+    },
+    "Version 0.1.0 Test": {
+      "main": [
+        [
+          {
+            "node": "Execution Audit Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execution Audit Log": {
+      "main": [
+        [
+          {
+            "node": "Version 0.1.1 Test",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -511,7 +559,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "11c89ab5-d28d-4c47-80c9-c149a407dd76",
+  "versionId": "ae15661d-a5f6-4464-9b02-2117c6fa61e8",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "cc9620e8417f8ca78731be92f1cb94a7c2ac73008e3b0b931735db73434bcdca"
