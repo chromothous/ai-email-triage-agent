@@ -265,6 +265,32 @@
       ],
       "id": "75bdb954-644e-46f6-be36-505c5983ed11",
       "name": "Version 0.0.9 Test"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\nif (!data.executionValidation?.validated) {\n    throw new Error(\"❌ Execution has not been validated.\");\n}\n\nif (!data.executionPlan) {\n    throw new Error(\"❌ Missing execution plan.\");\n}\n\n// Simulate execution\nconst executionResult = {\n    success: true,\n    provider: data.executionPlan.provider,\n    operation: data.executionPlan.operation,\n    destination: data.executionPlan.destination,\n    executedAt: new Date().toISOString()\n};\n\n// Update execution plan\nconst updatedExecutionPlan = {\n    ...data.executionPlan,\n    executed: true\n};\n\nreturn [{\n    json: {\n        ...data,\n        executionPlan: updatedExecutionPlan,\n        executionResult,\n        version: \"0.1.0\"\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1664,
+        0
+      ],
+      "id": "948f7062-322c-4dbd-b45b-dff67acef00c",
+      "name": "Email Execution"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\n// Ensure execution result exists\nif (!data.executionResult) {\n    throw new Error(\"❌ Missing execution result.\");\n}\n\nconst result = data.executionResult;\n\n// Validate success\nif (result.success !== true) {\n    throw new Error(\"❌ Execution was not successful.\");\n}\n\n// Validate required fields\nconst requiredFields = [\n    \"provider\",\n    \"operation\",\n    \"destination\",\n    \"executedAt\"\n];\n\nfor (const field of requiredFields) {\n    if (!(field in result)) {\n        throw new Error(`❌ Missing executionResult.${field}`);\n    }\n}\n\n// Validate timestamp\nif (isNaN(Date.parse(result.executedAt))) {\n    throw new Error(\n        `❌ Invalid execution timestamp: ${result.executedAt}`\n    );\n}\n\n// Ensure execution plan exists\nif (!data.executionPlan) {\n    throw new Error(\"❌ Missing execution plan.\");\n}\n\n// Verify execution plan was updated\nif (data.executionPlan.executed !== true) {\n    throw new Error(\n        \"❌ Execution plan should be marked as executed.\"\n    );\n}\n\n// Cross-check execution result against execution plan\nif (result.provider !== data.executionPlan.provider) {\n    throw new Error(\n        `❌ Provider mismatch. Expected '${data.executionPlan.provider}', received '${result.provider}'.`\n    );\n}\n\nif (result.operation !== data.executionPlan.operation) {\n    throw new Error(\n        `❌ Operation mismatch. Expected '${data.executionPlan.operation}', received '${result.operation}'.`\n    );\n}\n\nif (result.destination !== data.executionPlan.destination) {\n    throw new Error(\n        `❌ Destination mismatch. Expected '${data.executionPlan.destination}', received '${result.destination}'.`\n    );\n}\n\n// Success\nreturn [{\n    json: {\n        ...data,\n\n        testResults: {\n            ...(data.testResults ?? {}),\n            v010: {\n                passed: true,\n                executed: true,\n                executedAt: result.executedAt\n            }\n        }\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1984,
+        288
+      ],
+      "id": "1d5e5947-f193-44dc-86ff-d18dbde8d971",
+      "name": "Version 0.1.0 Test"
     }
   ],
   "pinData": {},
@@ -455,6 +481,28 @@
           }
         ]
       ]
+    },
+    "Version 0.0.9 Test": {
+      "main": [
+        [
+          {
+            "node": "Email Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Execution": {
+      "main": [
+        [
+          {
+            "node": "Version 0.1.0 Test",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -463,7 +511,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "ae6c66ec-a3e7-4fb9-b400-30d26f36502d",
+  "versionId": "11c89ab5-d28d-4c47-80c9-c149a407dd76",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "cc9620e8417f8ca78731be92f1cb94a7c2ac73008e3b0b931735db73434bcdca"

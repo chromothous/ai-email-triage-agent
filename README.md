@@ -28,4 +28,7 @@ Added Execution Planner, tested flow.
 Version 0.0.9
 Added Execution Validation, tested flow.
 
-Version
+Version 0.1.0
+Added email execution, tested flow.
+
+Version 0.1.1
