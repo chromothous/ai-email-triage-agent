@@ -343,6 +343,32 @@
       ],
       "id": "26456c6a-9e72-4a20-a1f7-0e474b0fab34",
       "name": "Version 0.1.2 Test"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\nif (!data.executionResult) {\n    throw new Error(\"❌ Missing execution result.\");\n}\n\nif (!data.auditLog) {\n    throw new Error(\"❌ Missing audit log.\");\n}\n\nif (!data.processingMetrics) {\n    throw new Error(\"❌ Missing processing metrics.\");\n}\n\nconst runSummary = {\n    status: data.executionResult.success ? \"SUCCESS\" : \"FAILED\",\n    provider: data.executionResult.provider,\n    operation: data.executionResult.operation,\n    destination: data.executionResult.destination,\n    emailsProcessed: data.processingMetrics.processed,\n    successRate: data.processingMetrics.successRate,\n    completedAt: new Date().toISOString()\n};\n\nreturn [{\n    json: {\n        ...data,\n        runSummary,\n        version: \"0.1.3\"\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2208,
+        0
+      ],
+      "id": "fc86c548-d928-4872-91ef-c265823d4265",
+      "name": "Run Summary"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\n// Ensure run summary exists\nif (!data.runSummary) {\n    throw new Error(\"❌ Missing run summary.\");\n}\n\nconst summary = data.runSummary;\n\n// Validate required fields\nconst requiredFields = [\n    \"status\",\n    \"provider\",\n    \"operation\",\n    \"destination\",\n    \"emailsProcessed\",\n    \"successRate\",\n    \"completedAt\"\n];\n\nfor (const field of requiredFields) {\n    if (!(field in summary)) {\n        throw new Error(`❌ Missing runSummary.${field}`);\n    }\n}\n\n// Validate status\nconst validStatuses = [\"SUCCESS\", \"FAILED\"];\n\nif (!validStatuses.includes(summary.status)) {\n    throw new Error(\n        `❌ Invalid status '${summary.status}'.`\n    );\n}\n\n// Validate processed count\nif (!Number.isInteger(summary.emailsProcessed) ||\n    summary.emailsProcessed < 0) {\n    throw new Error(\"❌ Invalid emailsProcessed value.\");\n}\n\n// Validate success rate\nif (typeof summary.successRate !== \"number\" ||\n    summary.successRate < 0 ||\n    summary.successRate > 100) {\n    throw new Error(\"❌ Invalid successRate.\");\n}\n\n// Validate timestamp\nif (isNaN(Date.parse(summary.completedAt))) {\n    throw new Error(\n        `❌ Invalid completedAt timestamp '${summary.completedAt}'.`\n    );\n}\n\n// Cross-check with execution result\nif (!data.executionResult) {\n    throw new Error(\"❌ Missing execution result.\");\n}\n\nconst expectedStatus = data.executionResult.success\n    ? \"SUCCESS\"\n    : \"FAILED\";\n\nif (summary.status !== expectedStatus) {\n    throw new Error(\n        `❌ Expected status '${expectedStatus}', received '${summary.status}'.`\n    );\n}\n\nif (summary.provider !== data.executionResult.provider) {\n    throw new Error(\"❌ Provider mismatch.\");\n}\n\nif (summary.operation !== data.executionResult.operation) {\n    throw new Error(\"❌ Operation mismatch.\");\n}\n\nif (summary.destination !== data.executionResult.destination) {\n    throw new Error(\"❌ Destination mismatch.\");\n}\n\n// Cross-check with processing metrics\nif (!data.processingMetrics) {\n    throw new Error(\"❌ Missing processing metrics.\");\n}\n\nif (summary.emailsProcessed !== data.processingMetrics.processed) {\n    throw new Error(\n        \"❌ emailsProcessed does not match processingMetrics.processed.\"\n    );\n}\n\nif (summary.successRate !== data.processingMetrics.successRate) {\n    throw new Error(\n        \"❌ successRate does not match processingMetrics.successRate.\"\n    );\n}\n\n// Success\nreturn [{\n    json: {\n        ...data,\n\n        testResults: {\n            ...(data.testResults ?? {}),\n            \"v0.1.3\": {\n                passed: true,\n                status: summary.status,\n                completedAt: summary.completedAt\n            }\n        }\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2560,
+        288
+      ],
+      "id": "3e2d05cc-1c69-4689-966c-6be3eebdfa55",
+      "name": "Version 0.1.3 Test"
     }
   ],
   "pinData": {},
@@ -599,6 +625,28 @@
           }
         ]
       ]
+    },
+    "Version 0.1.2 Test": {
+      "main": [
+        [
+          {
+            "node": "Run Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Summary": {
+      "main": [
+        [
+          {
+            "node": "Version 0.1.3 Test",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -607,7 +655,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "f0ace306-c25f-444d-bc2f-5dc2e3234f65",
+  "versionId": "f30a0f11-ecba-494e-b323-ef386d1f0d38",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "cc9620e8417f8ca78731be92f1cb94a7c2ac73008e3b0b931735db73434bcdca"
