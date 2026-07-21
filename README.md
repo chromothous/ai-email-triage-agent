@@ -35,3 +35,6 @@ Version 0.1.1
 Added Execution Audit Log creation, tested flow.
 
 Version 0.1.2
+Added processing metrics, tested flow.
+
+Version 0.1.3

@@ -317,6 +317,32 @@
       ],
       "id": "a15cfc1a-fad1-44a1-ba71-526974e511be",
       "name": "Version 0.1.1 Test"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\nif (!data.auditLog) {\n    throw new Error(\"❌ Missing audit log.\");\n}\n\nif (!data.executionResult?.success) {\n    throw new Error(\"❌ Cannot generate metrics for a failed execution.\");\n}\n\nconst processingMetrics = {\n    processed: 1,\n    successful: 1,\n    failed: 0,\n    successRate: 100,\n    provider: data.executionResult.provider,\n    generatedAt: new Date().toISOString()\n};\n\nreturn [{\n    json: {\n        ...data,\n        processingMetrics,\n        version: \"0.1.2\"\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        0
+      ],
+      "id": "bfbb62f0-6416-4b5d-8e27-c2547aa4d79a",
+      "name": "Processing Metrics"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json;\n\n// Ensure processing metrics exist\nif (!data.processingMetrics) {\n    throw new Error(\"❌ Missing processing metrics.\");\n}\n\nconst metrics = data.processingMetrics;\n\n// Validate required fields\nconst requiredFields = [\n    \"processed\",\n    \"successful\",\n    \"failed\",\n    \"successRate\",\n    \"provider\",\n    \"generatedAt\"\n];\n\nfor (const field of requiredFields) {\n    if (!(field in metrics)) {\n        throw new Error(`❌ Missing processingMetrics.${field}`);\n    }\n}\n\n// Validate numeric values\nif (!Number.isInteger(metrics.processed) || metrics.processed < 0) {\n    throw new Error(\"❌ Invalid processed count.\");\n}\n\nif (!Number.isInteger(metrics.successful) || metrics.successful < 0) {\n    throw new Error(\"❌ Invalid successful count.\");\n}\n\nif (!Number.isInteger(metrics.failed) || metrics.failed < 0) {\n    throw new Error(\"❌ Invalid failed count.\");\n}\n\nif (typeof metrics.successRate !== \"number\" ||\n    metrics.successRate < 0 ||\n    metrics.successRate > 100) {\n    throw new Error(\"❌ Invalid success rate.\");\n}\n\n// Validate timestamp\nif (isNaN(Date.parse(metrics.generatedAt))) {\n    throw new Error(\"❌ Invalid metrics timestamp.\");\n}\n\n// Cross-check totals\nif (metrics.processed !== metrics.successful + metrics.failed) {\n    throw new Error(\n        \"❌ Processed count does not equal successful + failed.\"\n    );\n}\n\n// Cross-check execution result\nif (!data.executionResult) {\n    throw new Error(\"❌ Missing execution result.\");\n}\n\nif (metrics.provider !== data.executionResult.provider) {\n    throw new Error(\n        \"❌ Provider mismatch between metrics and execution result.\"\n    );\n}\n\n// Cross-check audit log\nif (!data.auditLog) {\n    throw new Error(\"❌ Missing audit log.\");\n}\n\nif (metrics.provider !== data.auditLog.provider) {\n    throw new Error(\n        \"❌ Provider mismatch between metrics and audit log.\"\n    );\n}\n\n// Success\nreturn [{\n    json: {\n        ...data,\n\n        testResults: {\n            ...(data.testResults ?? {}),\n            \"v0.1.2\": {\n                passed: true,\n                processed: metrics.processed,\n                successful: metrics.successful,\n                failed: metrics.failed,\n                successRate: metrics.successRate,\n                timestamp: metrics.generatedAt\n            }\n        }\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2368,
+        288
+      ],
+      "id": "26456c6a-9e72-4a20-a1f7-0e474b0fab34",
+      "name": "Version 0.1.2 Test"
     }
   ],
   "pinData": {},
@@ -551,6 +577,28 @@
           }
         ]
       ]
+    },
+    "Version 0.1.1 Test": {
+      "main": [
+        [
+          {
+            "node": "Processing Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processing Metrics": {
+      "main": [
+        [
+          {
+            "node": "Version 0.1.2 Test",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -559,7 +607,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "ae15661d-a5f6-4464-9b02-2117c6fa61e8",
+  "versionId": "f0ace306-c25f-444d-bc2f-5dc2e3234f65",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "cc9620e8417f8ca78731be92f1cb94a7c2ac73008e3b0b931735db73434bcdca"
